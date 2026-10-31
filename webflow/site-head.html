@@ -1,4 +1,4 @@
-<!-- KL animations: hide text until split (failsafe 3s) -->
+<!-- KL animations (site-wide head). Source: github.com/rkessal/kl-beton -->
 <script>document.documentElement.classList.add('kl-anim');setTimeout(function(){if(!window.klAnimReady)document.documentElement.classList.remove('kl-anim')},3000);</script>
 <style>
 html.kl-anim h1,html.kl-anim h2,html.kl-anim .text-block{visibility:hidden}
@@ -16,4 +16,8 @@ html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!
 .kl-hover .footer-main-list-item-dot{background:#f2f2f2!important}
 .kl-menu-backdrop{position:fixed;inset:0;z-index:98;background:#f2f2f2;visibility:hidden;pointer-events:none}
 @media (min-width:992px){.kl-menu-backdrop{display:none}}
+.kl-screen{position:fixed;inset:0;z-index:2147483000;background:#1e1e1e;visibility:hidden;opacity:0;pointer-events:none}
+.kl-stack{background:#1e1e1e}
+.kl-stack>.service-item-1{will-change:transform}
+.kl-stack-shade{position:absolute;inset:0;background:#1e1e1e;opacity:0;pointer-events:none;z-index:5}
 </style>

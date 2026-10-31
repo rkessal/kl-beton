@@ -1,4 +1,4 @@
-head=open('webflow/head.html').read()
+head=open('webflow/site-head.html').read()
 js=open('dist/kl-anim.min.js').read()
 html=f"""<!doctype html><html><head>{head}</head><body>
 <div class="navbar" style="position:fixed;top:5px;display:flex;width:100%;z-index:99"><a class="nav-link" href="/">LOGO</a><a class="nav-link" href="/a">Fassadensanierung</a><a class="nav-link" href="/b">Über uns</a></div>
