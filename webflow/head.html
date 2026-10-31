@@ -1,0 +1,19 @@
+<!-- KL animations: hide text until split (failsafe 3s) -->
+<script>document.documentElement.classList.add('kl-anim');setTimeout(function(){if(!window.klAnimReady)document.documentElement.classList.remove('kl-anim')},3000);</script>
+<style>
+html.kl-anim h1,html.kl-anim h2,html.kl-anim .text-block{visibility:hidden}
+html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!important}.lenis.lenis-stopped{overflow:clip}
+.kl-line{padding-bottom:.08em;margin-bottom:-.08em}
+.kl-roll{position:relative;display:inline-block;overflow:hidden;vertical-align:top}
+.kl-roll-a{display:block}.kl-roll-b{position:absolute;left:0;top:100%;white-space:nowrap}
+.kl-icon{position:relative;display:inline-flex;overflow:hidden;flex:0 0 auto}
+.kl-icon-2{position:absolute!important;left:0;top:0}
+.kl-fill{position:absolute;top:0;bottom:0;left:0;right:0;transform:scaleY(0);transform-origin:50% 100%;z-index:0;pointer-events:none}
+.kl-fill~*{position:relative;z-index:1}
+.kl-fill-brand{background:#105ba4;left:-10px;right:-10px}
+.kl-fill-dark{background:#1e1e1e}
+.kl-hover,.kl-hover *{color:#f2f2f2!important;transition:color .3s}
+.kl-hover .footer-main-list-item-dot{background:#f2f2f2!important}
+.kl-menu-backdrop{position:fixed;inset:0;z-index:98;background:#f2f2f2;visibility:hidden;pointer-events:none}
+@media (min-width:992px){.kl-menu-backdrop{display:none}}
+</style>
