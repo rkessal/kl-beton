@@ -41,7 +41,7 @@ All eases and durations are at the top of `src/kl-anim.js` (the original set):
 |----------|----------------|--------------------------------------------|
 | reveal   | `expo.out`     | text lines (1.3 s, H1 1.6 s, from 110%), rows (1.1 s) |
 | soft     | `expo.out`     | hero zoom (2.2 s), about image             |
-| mask     | `power4.inOut` | image clip-path wipes (1.4 s)              |
+| mask     | `power4.inOut` | image clip-path wipes (1.4 s); the image scales 1.1 → 1 at the same time (`IMG_ZOOM`) |
 | menu     | `power4.inOut` | mobile menu panel                          |
 | hover    | `power3.inOut` | button roll, row fill out                  |
 | hoverIn  | `power3.out`   | row fill in, nudges                        |
@@ -57,9 +57,17 @@ To try other values without rebuilding, set `window.KL_EASE` / `window.KL_DUR` b
 - **Active page:** the current page's link gets `--_colors---f3f3f2` and a brand-blue dot (`.kl-current`). The active link has no hover roll.
 - **On click (page-out):** the destination link becomes active right away. Its blue copy rolls back down, its background fades to grey (0.6 s), and the old active link fades back to white. The new page's navbar is marked instantly, so the swap is seamless.
 
+## Scroll text fade (bymonolog.com)
+
+`.service-overview-text`, and any element you give a `data-kl-fade` attribute in Webflow, is split into letters with no mask. Each letter goes from 0.5 to 1 opacity while you scroll, so the paragraph fills in line by line, from when its top reaches 85% of the screen until its bottom reaches 45%. The values are in `FADE` at the top of `src/kl-anim.js`.
+
+## Logo marquee
+
+`.service-logos` (the client logos on the service pages) scrolls endlessly to the left at 50 px/s and slows down on hover. It shows 4 cells at a time on desktop and 2 on tablet and phone, and both edges fade out (8% gradient mask). The cells are repeated in JS for a seamless loop, so add or remove logos in Webflow as usual. Settings: `MARQUEE` at the top of `src/kl-anim.js`.
+
 ## Service list – stacked cards
 
-On the service pages (≥ 768 px), each `.service-list > .service-item-1` pins while the next card slides up over it. The pinned card scales to 0.9, tilts −3° and darkens slightly, with the section background showing through as `#1e1e1e`. Cards taller than the screen pin by their bottom edge so nothing is cut off. Below 768 px the list scrolls normally.
+On the service pages (≥ 768 px), each `.service-list > .service-item-1` pins, holds for half a screen of scrolling (`STACK.hold`, `50vh`), then the next card slides up over it. The pinned card scales to 0.9, tilts −3° and darkens slightly, with the section background showing through as `#1e1e1e`. Cards taller than the screen pin by their bottom edge so nothing is cut off. Below 768 px the list scrolls normally.
 
 ## Testimonial slider (home page)
 

@@ -4,6 +4,7 @@
 html.kl-anim h1,html.kl-anim h2,html.kl-anim .text-block{visibility:hidden}
 html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!important}.lenis.lenis-stopped{overflow:clip}
 .kl-line{padding-bottom:.08em;margin-bottom:-.08em}
+.kl-line-mask{overflow:visible!important;clip-path:inset(0 -100vw 0 -100vw)} /* clip the rise vertically only: wide words can overflow their column */
 .kl-roll{position:relative;display:inline-block;overflow:hidden;vertical-align:top}
 .kl-roll-a{display:block}.kl-roll-b{position:absolute;left:0;top:100%;white-space:nowrap}
 .kl-icon{position:relative;display:inline-flex;overflow:hidden;flex:0 0 auto}
@@ -28,6 +29,10 @@ html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!
 .navbar .nav-link .kl-nav-b .nav-link-dot{background-color:#fff!important}
 .navbar{z-index:2147483001!important} /* navbar stays above the page transition */
 .kl-screen{position:fixed;inset:0;z-index:2147483000;background:transparent;visibility:hidden;opacity:0;pointer-events:none}
+.kl-marquee{display:block!important;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%)}
+.kl-marquee-track{display:flex;flex-wrap:nowrap;width:max-content;will-change:transform}
+.kl-marquee{border-bottom:1px solid rgba(30,30,30,.3)!important}
+.kl-marquee .service-logo-cell{border-right:0!important;border-bottom:0!important;box-sizing:border-box}
 .kl-stack{background:#1e1e1e!important;padding-left:0!important;padding-right:0!important}
 .kl-stack .service-item-1{min-height:100vh;padding-left:20px;padding-right:20px;will-change:transform}
 @media (max-width:991px){.kl-stack .service-item-1{padding-left:10px;padding-right:10px}}

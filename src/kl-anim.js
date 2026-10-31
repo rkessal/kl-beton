@@ -35,6 +35,10 @@
   /* Page transition: old page blurs a little, brand blue fades over it, new page un-blurs underneath */
   var PAGE = window.KL_PAGE || { color: '#105ba4', blur: 6 };
   var STAGGER = 0.06;
+  var FADE = window.KL_FADE || { from: 0.5, start: 'top 85%', end: 'bottom 45%', scrub: 0.6 }; // scroll text fade
+  var STACK = window.KL_STACK || { hold: '50vh', scale: 0.9, rotate: -3 }; // service cards
+  var MARQUEE = window.KL_MARQUEE || { speed: 50, hoverSpeed: 0.3 }; // logo marquee: px per second, speed factor on hover
+  var IMG_ZOOM = 1.1; // images start this much bigger and settle as their mask opens
 
   var root = document.documentElement;
 
@@ -201,7 +205,9 @@
     } catch (e) { /* never block the transition */ }
   }
 
+  var pageCleanups = [];
   function killPage() {
+    while (pageCleanups.length) { try { pageCleanups.pop()(); } catch (e) {} }
     if (ctx) { ctx.revert(); ctx = null; }
     ST.getAll().forEach(function (t) { t.kill(); });
   }
@@ -223,7 +229,7 @@
 
   var SKIP = '.navbar, .button, .button-2, .contact-submit, .faq-list-item, .footer-main-list-item, ' +
     '.footer-main-right-links-item, .service-4-article-list-item, .about-quality-line, .about-hero-word, ' +
-    '.hero-info, .service-5-item-list-item, [data-kl-track], form, label';
+    '.hero-info, .service-5-item-list-item, [data-kl-track], .service-overview-text, [data-kl-fade], form, label';
   var IMG_WRAPS = '.service-hero-image, .service-item-image, .service-3-img, .service-5-item-image-wrapper, ' +
     '.cta-item-image-wrapper, .about-onsite-image, .contact-image';
 
@@ -259,17 +265,34 @@
       else splitReveal(el, el.tagName === 'H1' ? { d: D.h1, stagger: 0.1 } : {});
     });
 
+    /* ---------- scroll-scrubbed text (bymonolog.com): no mask, letters go 0.5 → 1 opacity,
+       reading through the paragraph line by line as it scrolls into view.
+       Applies to .service-overview-text and anything with a data-kl-fade attribute. ---------- */
+    $('.service-overview-text, [data-kl-fade]').forEach(function (box) {
+      var targets = box.matches('[data-kl-fade]') && !box.matches('.service-overview-text') ? [box] : q('h1, h2, .text-block', box);
+      if (!targets.length) targets = [box];
+      targets.forEach(function (el) {
+        gsap.set(el, { visibility: 'visible' });
+        if (!Split) return;
+        var s = new Split(el, { type: 'lines, words, chars', linesClass: 'kl-fade-line', wordsClass: 'kl-fade-word', charsClass: 'kl-fade-char' });
+        gsap.fromTo(s.chars, { opacity: FADE.from }, {
+          opacity: 1, ease: 'none', stagger: 0.04,
+          scrollTrigger: { trigger: el, start: FADE.start, end: FADE.end, scrub: FADE.scrub }
+        });
+      });
+    });
+
     /* ---------- image mask reveal + parallax ---------- */
     $(IMG_WRAPS).forEach(function (w) {
       if (w.tagName === 'IMG') w = w.parentElement;
-      if (w.closest('.kl-stack')) return; // stacked service cards handle their own motion
       var img = w.querySelector('img'); if (!img) return;
       w.style.overflow = 'hidden';
-      gsap.fromTo(w, { clipPath: 'inset(100% 0% 0% 0%)' }, {
-        clipPath: 'inset(0% 0% 0% 0%)', duration: D.img, ease: E.mask,
-        scrollTrigger: { trigger: w, start: 'top 90%', once: true }
-      });
-      gsap.set(img, { scale: 1.18, transformOrigin: '50% 50%' });
+      // mask opens while the image scales down 1.1 → 1 (on top of the parallax overscale)
+      var BASE = 1.18; // room for the ±7% parallax below
+      gsap.set(img, { scale: BASE * IMG_ZOOM, transformOrigin: '50% 50%' });
+      gsap.timeline({ scrollTrigger: { trigger: w, start: 'top 90%', once: true } })
+        .fromTo(w, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: D.img, ease: E.mask }, 0)
+        .to(img, { scale: BASE, duration: D.img, ease: E.mask }, 0);
       gsap.fromTo(img, { yPercent: -7 }, {
         yPercent: 7, ease: 'none',
         scrollTrigger: { trigger: w, start: 'top bottom', end: 'bottom top', scrub: true }
@@ -408,7 +431,7 @@
       if (img) {
         gsap.fromTo(img, { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: D.img, ease: E.mask, delay: 0.6 });
         var im = img.querySelector('img');
-        if (im) gsap.fromTo(im, { scale: 1.3 }, { scale: 1, duration: D.hero, ease: E.soft, delay: 0.6 });
+        if (im) gsap.fromTo(im, { scale: IMG_ZOOM }, { scale: 1, duration: D.img, ease: E.mask, delay: 0.6 });
       }
     });
 
@@ -440,7 +463,58 @@
     });
 
     initServiceStack(c);
+    initMarquee(c);
     initSliders(c, gsap, Split);
+  }
+
+  /* =====================================================================
+     LOGO MARQUEE – .service-logos scrolls endlessly with a soft fade on both edges.
+     The cells keep their look (4 per row on desktop, 2 on tablet/phone); the set is
+     repeated so the loop is seamless. Speed in px/s: MARQUEE.speed.
+     ===================================================================== */
+  function initMarquee(c) {
+    q('.service-logos', c).forEach(function (row) {
+      var track = row.querySelector(':scope > .kl-marquee-track');
+      if (!track) {
+        var cells = Array.prototype.slice.call(row.children);
+        if (cells.length < 2) return;
+        track = document.createElement('div'); track.className = 'kl-marquee-track';
+        cells.forEach(function (cell) { track.appendChild(cell); });
+        row.appendChild(track);
+        row.classList.add('kl-marquee');
+        track.dataset.count = cells.length;
+      }
+      var count = +track.dataset.count;
+      var originals = Array.prototype.slice.call(track.children, 0, count);
+      var tween = null;
+      function build() {
+        if (tween) tween.kill();
+        var perView = window.innerWidth <= 991 ? 2 : 4;
+        var cellW = Math.round(row.clientWidth / perView); // whole pixels: 1px borders stay crisp
+        // enough copies to always cover the row twice
+        var sets = Math.max(2, Math.ceil((row.clientWidth * 2) / (cellW * count)));
+        while (track.children.length > count) track.removeChild(track.lastChild);
+        for (var k = 1; k < sets; k++) originals.forEach(function (o) {
+          var cl = o.cloneNode(true); cl.setAttribute('aria-hidden', 'true'); track.appendChild(cl);
+        });
+        Array.prototype.forEach.call(track.children, function (cell) { cell.style.width = cellW + 'px'; cell.style.flex = '0 0 ' + cellW + 'px'; });
+        var setW = cellW * count;
+        gsap.set(track, { x: 0 });
+        tween = gsap.to(track, {
+          x: -setW, duration: setW / MARQUEE.speed, ease: 'none', repeat: -1,
+          modifiers: { x: function (v) { return Math.round(parseFloat(v)) + 'px'; } } // no half-pixel borders while moving
+        });
+        if (!isTouch) {
+          row.onmouseenter = function () { gsap.to(tween, { timeScale: MARQUEE.hoverSpeed, duration: 0.6, overwrite: true }); };
+          row.onmouseleave = function () { gsap.to(tween, { timeScale: 1, duration: 0.6, overwrite: true }); };
+        }
+      }
+      build();
+      var w = window.innerWidth, t;
+      var onResize = function () { if (window.innerWidth === w) return; w = window.innerWidth; clearTimeout(t); t = setTimeout(build, 150); };
+      window.addEventListener('resize', onResize);
+      pageCleanups.push(function () { window.removeEventListener('resize', onResize); if (tween) tween.kill(); });
+    });
   }
 
   /* =====================================================================
@@ -466,6 +540,8 @@
         list.classList.add('kl-stack');
         cards.forEach(function (card, i) {
           gsap.set(card, { position: 'relative', zIndex: i + 1, backgroundColor: bg, transformOrigin: '50% 50%' });
+          // hold: each card stays pinned this much longer before the next one starts sliding over it
+          if (i > 0) gsap.set(card, { marginTop: STACK.hold });
         });
         var last = cards[cards.length - 1];
         cards.forEach(function (card, i) {
@@ -482,7 +558,7 @@
             pinSpacing: false
           });
           gsap.to(card, {
-            scale: 0.9, rotation: -3, ease: 'none',
+            scale: STACK.scale, rotation: STACK.rotate, ease: 'none',
             scrollTrigger: { trigger: next, start: 'top bottom', end: 'top top', scrub: true }
           });
           var shade = card.querySelector(':scope > .kl-stack-shade');
