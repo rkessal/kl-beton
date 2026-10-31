@@ -14,39 +14,69 @@
   'use strict';
 
   /* =====================================================================
-     EASING – change these to restyle every animation.
-     Curves taken from oharchitecture.com.au (Monolog):
-       ease-secondary  0.16, 1, 0.35, 1   → nearly everything (text, images, hovers)
-       ease-transition 0.76, 0, 0.24, 1   → clip-path wipes
-       ease-menu       .7, 0, .22, 1      → menu panel
+     EASING – change these to restyle every animation (original set).
      ===================================================================== */
-  var CURVES = {
-    klSecondary: '0.16, 1, 0.35, 1',
-    klTransition: '0.76, 0, 0.24, 1',
-    klMenu: '.7, 0, .22, 1'
-  };
-  var hasCE = !!(window.gsap && window.CustomEase);
-  if (hasCE) {
-    window.gsap.registerPlugin(window.CustomEase);
-    Object.keys(CURVES).forEach(function (k) { window.CustomEase.create(k, CURVES[k]); });
-  }
   var E = window.KL_EASE || {
-    reveal:  hasCE ? 'klSecondary'  : 'expo.out',     // text lines, rows, labels
-    soft:    hasCE ? 'klSecondary'  : 'expo.out',     // hero / about image zoom
-    mask:    hasCE ? 'klTransition' : 'power3.inOut', // image clip-path wipes
-    menu:    hasCE ? 'klMenu'       : 'power3.inOut', // menu panel
-    hover:   hasCE ? 'klSecondary'  : 'expo.out',     // buttons, row fills
-    exit:    'power1.in',                             // things leaving
-    page:    hasCE ? 'klSecondary'  : 'expo.out'      // page transition screen
+    reveal:  'expo.out',      // text lines, rows, labels
+    soft:    'expo.out',      // hero / about image zoom
+    mask:    'power4.inOut',  // image + menu clip-path wipes
+    menu:    'power4.inOut',  // mobile menu panel
+    hover:   'power3.inOut',  // button roll, row fill out
+    hoverIn: 'power3.out',    // row fill in, nudges
+    nav:     'power3.out',    // navbar link roll (anuchome.com: ~1s power3.out)
+    exit:    'power3.in',     // things leaving
+    page:    'expo.out',      // new page revealed
+    pageIn:  'power2.inOut'   // old page blurs, blue fades in
   };
-  /* Durations (OH: transitionSlider 1, transitionNormal .875, hero 1.8) */
   var D = window.KL_DUR || {
-    text: 1, h1: 1.2, row: 1, img: 1.2, hero: 1.8, hover: 0.6,
-    pageIn: 0.35, pageHold: 0.375, pageOut: 0.875
+    text: 1.3, h1: 1.6, row: 1.1, img: 1.4, hero: 2.2, hover: 0.55, nav: 1,
+    pageBlur: 0.7, pageIn: 0.6, pageHold: 0.15, pageOut: 1.1
   };
-  var STAGGER = 0.0825;
+  /* Page transition: old page blurs a little, brand blue fades over it, new page un-blurs underneath */
+  var PAGE = window.KL_PAGE || { color: '#105ba4', blur: 6 };
+  var STAGGER = 0.06;
 
   var root = document.documentElement;
+
+  /* ---------- navbar: active link (.kl-current) ----------
+     Candidates are the page links with a plain white background: the logo (first link) and the
+     "Projekt anfragen" button are skipped. They get data-kl-nav-item so later checks don't depend
+     on the (animated) background colour. */
+  var normPath = function (p) { return (p || '/').replace(/\/+$/, '') || '/'; };
+  function navItems(c) {
+    return q('.navbar .nav-link', c || document).filter(function (a, i) {
+      if (a.dataset.klNavItem) return true;
+      if (i === 0 || !a.pathname || a.hostname !== location.hostname) return false;
+      var bg = getComputedStyle(a).backgroundColor;
+      if (/^rgba?\(255,\s*255,\s*255(,\s*1)?\)$/.test(bg) || a.classList.contains('kl-current')) { a.dataset.klNavItem = '1'; return true; }
+      return false;
+    });
+  }
+  // instant: used on page load / after a swap (the new navbar must look exactly like the old one did)
+  function markCurrentNav(c) {
+    var here = normPath(location.pathname);
+    navItems(c).forEach(function (a) {
+      a.classList.add('kl-nav-instant');
+      a.classList.toggle('kl-current', normPath(a.pathname) === here);
+    });
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      q('.kl-nav-instant', c || document).forEach(function (a) { a.classList.remove('kl-nav-instant'); });
+    }); });
+  }
+  // animated: on page-out the clicked destination becomes active (CSS transitions the colours)
+  // and its blue hover copy rolls back down
+  function navGoTo(path) {
+    path = normPath(path);
+    navItems(document).forEach(function (a) {
+      var on = normPath(a.pathname) === path;
+      a.classList.toggle('kl-current', on);
+      if (on && window.gsap) {
+        var parts = [a.querySelector(':scope > .kl-nav-a'), a.querySelector(':scope > .kl-nav-b')].filter(Boolean);
+        if (parts.length) window.gsap.to(parts, { y: 0, duration: 0.6, ease: 'power3.out', overwrite: true });
+      }
+    });
+  }
+
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var q = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
   function done() { root.classList.remove('kl-anim'); }
@@ -54,7 +84,7 @@
   /* ---------- no GSAP / reduced motion: content visible, slider + Barba-free ---------- */
   if (reduce || !window.gsap || !window.ScrollTrigger) {
     done();
-    var boot0 = function () { initSliders(document, reduce ? null : window.gsap, null); };
+    var boot0 = function () { markCurrentNav(document); initSliders(document, reduce ? null : window.gsap, null); };
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot0) : boot0();
     window.klAnimReady = true;
     return;
@@ -66,6 +96,16 @@
   var isTouch = window.matchMedia('(hover: none)').matches;
   var lenis = null, ctx = null, screen = null, backdrop = null;
   var menu = { open: false, busy: false };
+  var veil = { blur: 0, tint: 0 };
+  function rgb(hex) {
+    var h = hex.replace('#', ''); if (h.length === 3) h = h.replace(/(.)/g, '$1$1');
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)].join(',');
+  }
+  function paintScreen() {
+    var f = veil.blur > 0.01 ? 'blur(' + veil.blur.toFixed(2) + 'px)' : 'none';
+    screen.style.backdropFilter = f; screen.style.webkitBackdropFilter = f;
+    screen.style.backgroundColor = 'rgba(' + rgb(PAGE.color) + ',' + veil.tint.toFixed(3) + ')';
+  }
 
   /* =====================================================================
      ONCE
@@ -103,20 +143,24 @@
         transitions: [{
           name: 'kl-fade',
           once: function (data) { initPage(data.next.container); },
-          leave: function () {
+          leave: function (data) {
             closeMenu(true);
             lenis && lenis.stop();
+            root.classList.add('kl-leaving');
+            navGoTo(data.next.url.path);
+            // the screen blurs what's behind it (backdrop-filter), so fixed elements such as
+            // the navbar stay where they are; a filter on the page itself would move them
+            gsap.set(screen, { autoAlpha: 1 });
             return gsap.timeline()
-              .set(screen, { autoAlpha: 0 })
-              .to(screen, { autoAlpha: 1, duration: D.pageIn, ease: E.page })
+              .fromTo(veil, { blur: 0 }, { blur: PAGE.blur, duration: D.pageBlur, ease: E.pageIn, onUpdate: paintScreen }, 0)
+              .fromTo(veil, { tint: 0 }, { tint: 1, duration: D.pageIn, ease: E.pageIn, onUpdate: paintScreen }, D.pageBlur * 0.35)
               .to({}, { duration: D.pageHold });
           },
-          afterLeave: function (data) {
-            killPage();
-            // remove the old page now so the new one measures and initialises alone
-            data.current.container && data.current.container.remove();
-          },
+          afterLeave: function () { killPage(); },
           beforeEnter: function (data) {
+            // the new page is already in the DOM here: drop the old one in the same frame,
+            // so the navbar is never missing and the new page measures and initialises alone
+            data.current.container && data.current.container.remove();
             window.scrollTo(0, 0);
             lenis && lenis.scrollTo(0, { immediate: true, force: true });
             resetWebflow(data.next.html);
@@ -125,9 +169,12 @@
           },
           enter: function () {
             lenis && lenis.start();
-            return gsap.to(screen, { autoAlpha: 0, duration: D.pageOut, ease: E.page });
+            return gsap.to(veil, {
+              blur: 0, tint: 0, duration: D.pageOut, ease: E.page, onUpdate: paintScreen,
+              onComplete: function () { gsap.set(screen, { autoAlpha: 0 }); }
+            });
           },
-          after: function () { ST.refresh(); }
+          after: function () { root.classList.remove('kl-leaving'); ST.refresh(); }
         }]
       });
     } else {
@@ -164,6 +211,7 @@
      ===================================================================== */
   function initPage(container) {
     killPage();
+    markCurrentNav(container);
     var run = function () {
       ctx = gsap.context(function () { pageAnimations(container); }, container);
       done();
@@ -189,7 +237,7 @@
       var s = new Split(el, { type: 'lines', mask: 'lines', linesClass: 'kl-line' });
       gsap.set(el, { visibility: 'visible' });
       gsap.from(s.lines, {
-        yPercent: 120, rotate: 0.001, duration: o.d || D.text, ease: E.reveal, stagger: o.stagger || STAGGER, delay: o.delay || 0,
+        yPercent: 110, rotate: 0.001, duration: o.d || D.text, ease: E.reveal, stagger: o.stagger || STAGGER, delay: o.delay || 0,
         scrollTrigger: o.noST ? null : { trigger: el, start: 'top 88%', once: true }
       });
     }
@@ -197,7 +245,7 @@
       o = o || {};
       gsap.set(el, { visibility: 'visible' });
       gsap.from(el, {
-        y: 24, autoAlpha: 0, duration: D.text, ease: E.reveal, delay: o.delay || 0,
+        y: 24, autoAlpha: 0, duration: 0.9, ease: E.reveal, delay: o.delay || 0,
         scrollTrigger: o.noST ? null : { trigger: el, start: 'top 92%', once: true }
       });
     }
@@ -208,7 +256,7 @@
       var txt = (el.textContent || '').trim();
       if (!txt) { gsap.set(el, { visibility: 'visible' }); return; }
       if (/^\(.*\)$/.test(txt) || txt.length < 4) fadeUp(el); // small labels like (SERVICES)
-      else splitReveal(el, el.tagName === 'H1' ? { d: D.h1 } : {});
+      else splitReveal(el, el.tagName === 'H1' ? { d: D.h1, stagger: 0.1 } : {});
     });
 
     /* ---------- image mask reveal + parallax ---------- */
@@ -234,8 +282,8 @@
       gsap.to(img, { yPercent: 12, ease: 'none', scrollTrigger: { trigger: img.closest('.hero') || img, start: 'top top', end: 'bottom top', scrub: true } });
     });
     $('.hero-aside').forEach(function (el) {
-      gsap.from(el, { y: 40, autoAlpha: 0, duration: D.text, ease: E.reveal, delay: 0.4 });
-      gsap.from(q('.hero-info', el), { y: 16, autoAlpha: 0, duration: D.text, ease: E.reveal, stagger: STAGGER, delay: 0.55 });
+      gsap.from(el, { y: 40, autoAlpha: 0, duration: 1.2, ease: E.reveal, delay: 0.6 });
+      gsap.from(q('.hero-info', el), { y: 16, autoAlpha: 0, duration: 0.8, ease: E.reveal, stagger: 0.08, delay: 0.8 });
     });
 
     /* ---------- buttons: text roll + arrow swap ---------- */
@@ -271,6 +319,26 @@
       b.addEventListener('mouseleave', function () { tl.reverse(); });
     });
 
+    /* ---------- navbar links: brand-blue copy rolls up from below on hover (anuchome.com) ----------
+       Skips the logo (first link) and links with their own background (the "Projekt anfragen" button). */
+    if (!isTouch) navItems(c).forEach(function (a) {
+      if (a.dataset.klNav || !a.dataset.klNavItem) return; // candidates only (marked by navItems)
+      a.dataset.klNav = '1';
+      var top = document.createElement('span'); top.className = 'kl-nav-a';
+      while (a.firstChild) top.appendChild(a.firstChild);
+      var bottom = top.cloneNode(true); bottom.className = 'kl-nav-b'; bottom.setAttribute('aria-hidden', 'true');
+      a.appendChild(top); a.appendChild(bottom);
+      var h = function () { return -a.clientHeight; }; // padding box: .kl-nav-b sits at top:100% of it
+      a.addEventListener('mouseenter', function () {
+        if (a.classList.contains('kl-current') || root.classList.contains('kl-leaving')) return; // no hover on the active page
+        gsap.to([top, bottom], { y: h, duration: D.nav, ease: E.nav, overwrite: true });
+      });
+      a.addEventListener('mouseleave', function () {
+        if (root.classList.contains('kl-leaving')) return; // navGoTo is handling it
+        gsap.to([top, bottom], { y: 0, duration: D.nav, ease: E.nav, overwrite: true });
+      });
+    });
+
     /* ---------- row hovers (FAQ, footer, process list) ---------- */
     function addFill(el, cls) {
       var f = el.querySelector(':scope > .kl-fill');
@@ -286,14 +354,14 @@
         var fill = o.fill ? addFill(r, o.fill) : null;
         var shift = o.shift ? q(o.shift, r) : [];
         r.addEventListener('mouseenter', function () {
-          if (fill) gsap.to(fill, { scaleY: 1, duration: D.hover, ease: E.hover, overwrite: true });
-          if (shift.length) gsap.to(shift, { x: o.dx || 14, duration: D.hover, ease: E.hover, overwrite: true });
+          if (fill) gsap.to(fill, { scaleY: 1, duration: D.hover, ease: E.hoverIn, overwrite: true });
+          if (shift.length) gsap.to(shift, { x: o.dx || 14, duration: 0.6, ease: E.hoverIn, overwrite: true });
           if (o.dim) gsap.to(rows.filter(function (x) { return x !== r; }), { opacity: 0.35, duration: 0.4, overwrite: true });
           if (o.color) r.classList.add('kl-hover');
         });
         r.addEventListener('mouseleave', function () {
           if (fill) gsap.to(fill, { scaleY: 0, duration: D.hover, ease: E.hover, overwrite: true });
-          if (shift.length) gsap.to(shift, { x: 0, duration: D.hover, ease: E.hover, overwrite: true });
+          if (shift.length) gsap.to(shift, { x: 0, duration: 0.6, ease: E.hoverIn, overwrite: true });
           if (o.dim) gsap.to(rows, { opacity: 1, duration: 0.4, overwrite: true });
           if (o.color) r.classList.remove('kl-hover');
         });
@@ -331,7 +399,7 @@
         if (Split) {
           var s = new Split(target, { type: 'lines', mask: 'lines' });
           gsap.set(target, { visibility: 'visible' });
-          gsap.from(s.lines, { yPercent: 120, rotate: 0.001, duration: D.h1, ease: E.reveal, delay: 0.15 + i * 0.1 });
+          gsap.from(s.lines, { yPercent: 110, rotate: 0.001, duration: D.h1, ease: E.reveal, delay: 0.15 + i * 0.1 });
         } else fadeUp(target, { noST: true, delay: i * 0.12 });
       });
       var bar = h.querySelector('.about-hero-bar');
@@ -356,7 +424,7 @@
         if (Split) {
           var s = new Split(t, { type: 'chars', mask: 'chars' });
           gsap.from(s.chars, {
-            yPercent: 120, duration: D.text, ease: E.reveal, stagger: 0.02, delay: i * 0.08,
+            yPercent: 110, duration: 0.9, ease: E.reveal, stagger: 0.018, delay: i * 0.08,
             scrollTrigger: { trigger: qq, start: 'top 75%', once: true }
           });
         }
@@ -377,8 +445,11 @@
 
   /* =====================================================================
      SERVICE LIST – stacked cards
-     Each card pins while the next one slides up over it; the pinned card
-     shrinks a little and tilts left. Tablet/desktop only (≥ 768px).
+     Each card is at least one screen tall and full width (the list's side
+     padding moves inside the cards, see .kl-stack in site-head.html). It pins
+     while the next one slides up over it, shrinking a little and tilting left;
+     the dark list background only shows around a shrinking card.
+     Tablet/desktop only (≥ 768px).
      ===================================================================== */
   function initServiceStack(c) {
     q('.service-list', c).forEach(function (list) {
@@ -386,9 +457,13 @@
       if (cards.length < 2) return;
       var mm = gsap.matchMedia();
       mm.add('(min-width: 768px)', function () {
-        list.classList.add('kl-stack');
+        // cards take the list's own background (read before .kl-stack turns the list dark)
+        var clear = function (c) { return !c || c === 'transparent' || /rgba\(.*,\s*0\)$/.test(c); };
         var bg = getComputedStyle(cards[0]).backgroundColor;
-        if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') bg = getComputedStyle(document.body).backgroundColor || '#ededed';
+        if (clear(bg)) bg = getComputedStyle(list).backgroundColor;
+        if (clear(bg)) bg = getComputedStyle(document.body).backgroundColor;
+        if (clear(bg)) bg = '#ffffff';
+        list.classList.add('kl-stack');
         cards.forEach(function (card, i) {
           gsap.set(card, { position: 'relative', zIndex: i + 1, backgroundColor: bg, transformOrigin: '50% 50%' });
         });
@@ -452,17 +527,17 @@
     prepBtn(p.btn);
     menu.busy = true; menu.open = v;
     p.btn.setAttribute('aria-expanded', v ? 'true' : 'false');
-    gsap.to(q('.kl-roll-a, .kl-roll-b', p.btn), { yPercent: v ? -100 : 0, duration: 0.5, ease: E.menu });
+    gsap.to(q('.kl-roll-a, .kl-roll-b', p.btn), { yPercent: v ? -100 : 0, duration: 0.5, ease: E.hover });
     if (v) {
       p.nav.classList.add('kl-menu-open');
       lenis && lenis.stop();
       gsap.timeline({ onComplete: function () { menu.busy = false; } })
-        .fromTo(backdrop, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 }, { clipPath: 'inset(0 0 0% 0)', duration: 0.5, ease: E.menu }, 0)
-        .fromTo(p.items, { yPercent: 102, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: D.text, ease: E.reveal, stagger: 0.0625 }, 0.15);
+        .fromTo(backdrop, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 }, { clipPath: 'inset(0 0 0% 0)', duration: 0.8, ease: E.menu }, 0)
+        .fromTo(p.items, { yPercent: 60, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.7, ease: E.reveal, stagger: 0.06 }, 0.35);
     } else {
       gsap.timeline({ onComplete: function () { p.nav.classList.remove('kl-menu-open'); gsap.set(p.items, { clearProps: 'all' }); lenis && lenis.start(); menu.busy = false; } })
-        .to(p.items, { yPercent: 102, autoAlpha: 0, duration: 0.3, ease: E.exit, stagger: 0.035 }, 0)
-        .to(backdrop, { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: E.menu }, 0.1);
+        .to(p.items, { yPercent: -40, autoAlpha: 0, duration: 0.4, ease: E.exit, stagger: 0.04 }, 0)
+        .to(backdrop, { clipPath: 'inset(0 0 100% 0)', duration: 0.7, ease: E.menu }, 0.15);
     }
   }
   function closeMenu(instant) {
@@ -544,7 +619,7 @@
       }
       if (gsap && Split && window.ScrollTrigger) {
         gsap.from(lines(0), {
-          yPercent: 120, duration: D.text, ease: E.reveal, stagger: STAGGER,
+          yPercent: 110, duration: D.text, ease: E.reveal, stagger: STAGGER,
           scrollTrigger: { trigger: track, start: 'top 88%', once: true }
         });
       }
@@ -565,9 +640,9 @@
         }
         busy = true;
         gsap.timeline({ onComplete: function () { gsap.set(from, { opacity: 0, pointerEvents: 'none' }); busy = false; } })
-          .to(lines(prev), { yPercent: -120 * dir, duration: 0.4, ease: E.exit, stagger: 0.02 }, 0)
+          .to(lines(prev), { yPercent: -110 * dir, duration: 0.4, ease: E.exit, stagger: 0.02 }, 0)
           .set(next, { opacity: 1, pointerEvents: 'auto' }, 0.4)
-          .fromTo(lines(to), { yPercent: 120 * dir }, { yPercent: 0, duration: D.text, ease: E.reveal, stagger: STAGGER }, 0.4);
+          .fromTo(lines(to), { yPercent: 110 * dir }, { yPercent: 0, duration: D.text, ease: E.reveal, stagger: STAGGER }, 0.4);
       }
     });
   }

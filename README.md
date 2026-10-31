@@ -35,19 +35,27 @@ Lifecycle in `kl-anim.js`: `boot()` runs once; `initPage(container)` runs per pa
 
 ## Easing
 
-All eases and durations are at the top of `src/kl-anim.js`. The curves come from oharchitecture.com.au:
+All eases and durations are at the top of `src/kl-anim.js` (the original set):
 
-| key      | curve                    | used for                          |
-|----------|--------------------------|-----------------------------------|
-| reveal   | `0.16, 1, 0.35, 1`       | text lines (1 s, 0.0825 stagger, from 120%), rows |
-| soft     | `0.16, 1, 0.35, 1`       | hero / about image zoom (1.8 s)   |
-| mask     | `0.76, 0, 0.24, 1`       | image clip-path wipes (1.2 s)     |
-| menu     | `.7, 0, .22, 1`          | menu panel (0.5 s)                |
-| hover    | `0.16, 1, 0.35, 1`       | buttons, row fills (0.6 s)        |
-| exit     | `power1.in`              | things leaving                    |
-| page     | `0.16, 1, 0.35, 1`       | transition screen                 |
+| key      | ease           | used for                                   |
+|----------|----------------|--------------------------------------------|
+| reveal   | `expo.out`     | text lines (1.3 s, H1 1.6 s, from 110%), rows (1.1 s) |
+| soft     | `expo.out`     | hero zoom (2.2 s), about image             |
+| mask     | `power4.inOut` | image clip-path wipes (1.4 s)              |
+| menu     | `power4.inOut` | mobile menu panel                          |
+| hover    | `power3.inOut` | button roll, row fill out                  |
+| hoverIn  | `power3.out`   | row fill in, nudges                        |
+| nav      | `power3.out`   | navbar link roll (1 s, measured on anuchome.com) |
+| exit     | `power3.in`    | things leaving                             |
+| page / pageIn | `expo.out` / `power2.inOut` | page transition          |
 
-To try other values without rebuilding, set `window.KL_EASE` / `window.KL_DUR` before the script loads.
+To try other values without rebuilding, set `window.KL_EASE` / `window.KL_DUR` before the script loads, or just edit them with `npm run dev` running.
+
+## Navbar
+
+- **Hover (anuchome.com):** each link has a brand-blue copy (white text, white dot) below it that rolls up over 1 s with `power3.out`, and back down on leave. The logo and the "Projekt anfragen" button are left alone.
+- **Active page:** the current page's link gets `--_colors---f3f3f2` and a brand-blue dot (`.kl-current`). The active link has no hover roll.
+- **On click (page-out):** the destination link becomes active right away. Its blue copy rolls back down, its background fades to grey (0.6 s), and the old active link fades back to white. The new page's navbar is marked instantly, so the swap is seamless.
 
 ## Service list – stacked cards
 
@@ -59,6 +67,26 @@ On the service pages (≥ 768 px), each `.service-list > .service-item-1` pins w
 - **Remove one:** delete the instance. The dots follow the slide count, and with a single testimonial the arrows and dots are hidden.
 - **Arrows:** the first `.service-5-testimonials-button` goes back, the second goes forward. Both wrap around and work from the keyboard.
 
+## Live preview from your machine
+
+```bash
+brew install cloudflared     # once
+npm run dev
+```
+
+This serves `src/kl-anim.js` (unminified, no build needed) on `localhost:5173`, opens a Cloudflare quick tunnel and prints a link like:
+
+    https://kl-beton.webflow.io/?kl-dev=https://xxxx.trycloudflare.com
+
+Open it and the staging site runs **your local code**. The page reloads every time you save a file in `src/`, and a blue **DEV** badge shows bottom-left.
+
+- The browser remembers the setting. Click the badge or add `?kl-dev=off` to go back to the published build.
+- Only `*.webflow.io` honours `?kl-dev`; the custom domain always loads the published build. Only `trycloudflare.com` and `localhost` URLs are accepted.
+- If the tunnel is down, the page falls back to the published build and the badge turns red.
+- The tunnel URL changes each time you run `npm run dev`; just open the new link it prints. No Webflow publish is needed.
+
+When you're happy with it, release it as described in the next section.
+
 ## Updating the live site
 
 ```bash
@@ -68,4 +96,4 @@ npm test                    # builds dist/ and runs all mock checks
 git commit -am "..." && git tag v1.1.1 && git push --follow-tags
 ```
 
-Then bump the version in the last script tag of the **site footer code** (`@v1.1.0` → `@v1.1.1`) and publish.
+Then in Webflow, open **Site settings → Custom code → Footer**, change `PROD = '...@v1.1.0/...'` in the KL loader to the new tag (`@v1.1.1`) and publish.

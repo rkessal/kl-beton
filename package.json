@@ -5,7 +5,8 @@
   "description": "GSAP + Lenis animations for the KL Beton Webflow site",
   "scripts": {
     "build": "terser src/kl-anim.js -c -m -o dist/kl-anim.min.js",
-    "test": "npm run build && python3 test/build.py && node test/run.js && node test/slider.js && python3 test/site.py && node test/barba.js"
+    "test": "npm run build && python3 test/build.py && node test/run.js && node test/slider.js && python3 test/site.py && node test/barba.js && node test/dev.js",
+    "dev": "node scripts/dev.js"
   },
   "devDependencies": {
     "gsap": "^3.15.0",

@@ -1,0 +1,21 @@
+// Navbar link roll (anuchome): blue copy slides up on hover, back on leave; links still navigate.
+const { chromium } = require('playwright'); const http = require('http'), fs = require('fs'), path = require('path');
+const ROOT = path.resolve(__dirname, '..');
+const srv = http.createServer((q, r) => { const u = q.url.split('?')[0]; const f = u.startsWith('/node_modules/') || u.startsWith('/dist/') ? path.join(ROOT, u) : path.join(__dirname, 'site', u); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'content-type': f.endsWith('.js') ? 'text/javascript' : 'text/html' }); r.end(d); }); }).listen(4571);
+(async () => { const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1340, height: 800 } });
+  const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await p.goto('http://localhost:4571/index.html'); await p.waitForTimeout(1500);
+  const st = () => p.evaluate(() => [...document.querySelectorAll('.navbar .nav-link')].map(a => { const t = a.querySelector('.kl-nav-a'), bt = a.querySelector('.kl-nav-b'); return t ? { text: t.textContent.trim(), aTop: Math.round(t.getBoundingClientRect().top - a.getBoundingClientRect().top), bTop: Math.round(bt.getBoundingClientRect().top - a.getBoundingClientRect().top), bBg: getComputedStyle(bt).backgroundColor } : { text: a.textContent.trim(), roll: false }; }));
+  console.log('rest ', JSON.stringify(await st()));
+  await p.hover('.nav-link >> nth=1'); await p.waitForTimeout(250);
+  console.log('250ms', JSON.stringify((await st())[1]));
+  await p.waitForTimeout(1000);
+  console.log('hover', JSON.stringify((await st())[1]));
+  await p.mouse.move(700, 500); await p.waitForTimeout(1200);
+  console.log('leave', JSON.stringify((await st())[1]));
+  await p.click('.nav-link >> nth=1'); await p.waitForTimeout(2800);
+  console.log('click navigates:', p.url().endsWith('/service.html'), ' rolls rebuilt:', (await st()).filter(x => x.bTop !== undefined).length);
+  await p.screenshot({ path: __dirname + '/nav.png', clip: { x: 0, y: 0, width: 700, height: 60 } });
+  await p.hover('.nav-link >> nth=2'); await p.waitForTimeout(1200);
+  await p.screenshot({ path: __dirname + '/nav-hover.png', clip: { x: 0, y: 0, width: 700, height: 60 } });
+  console.log('errors', errs); await b.close(); srv.close(); })();
