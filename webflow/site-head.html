@@ -36,5 +36,17 @@ html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!
 .kl-stack{background:#1e1e1e!important;padding-left:0!important;padding-right:0!important}
 .kl-stack .service-item-1{min-height:100vh;padding-left:20px;padding-right:20px;will-change:transform}
 @media (max-width:991px){.kl-stack .service-item-1{padding-left:10px;padding-right:10px}}
+/* testimonial arrows: hover / focus / .active = light grey box, blue arrow + blue line */
+.service-5-testimonials-button{transition:background-color .55s cubic-bezier(.215,.61,.355,1)}
+.service-5-testimonials-button .button-icon{transition:border-color .55s cubic-bezier(.215,.61,.355,1)}
+.service-5-testimonials-button .button-icon path{transition:stroke .55s cubic-bezier(.215,.61,.355,1)}
+.service-5-testimonials-button.active,.service-5-testimonials-button:focus-visible{background-color:var(--_colors---ededed,#ededed);outline:0}
+.service-5-testimonials-button.active .button-icon,.service-5-testimonials-button:focus-visible .button-icon{border-color:var(--_colors---brand,#105ba4)}
+.service-5-testimonials-button.active .button-icon path,.service-5-testimonials-button:focus-visible .button-icon path{stroke:var(--_colors---brand,#105ba4)}
+@media (hover:hover){
+.service-5-testimonials-button:hover{background-color:var(--_colors---ededed,#ededed)}
+.service-5-testimonials-button:hover .button-icon{border-color:var(--_colors---brand,#105ba4)}
+.service-5-testimonials-button:hover .button-icon path{stroke:var(--_colors---brand,#105ba4)}
+}
 .kl-stack-shade{position:absolute;inset:0;background:#1e1e1e;opacity:0;pointer-events:none;z-index:5}
 </style>
