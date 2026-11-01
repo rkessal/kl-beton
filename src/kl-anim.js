@@ -423,7 +423,7 @@
       q('.about-hero-word', h).forEach(function (w, i) {
         var target = w.querySelector('h1, h2, .text-block') || w;
         if (Split) {
-          var s = new Split(target, { type: 'lines', mask: 'lines' });
+          var s = new Split(target, { type: 'lines', mask: 'lines', linesClass: 'kl-line' });
           gsap.set(target, { visibility: 'visible' });
           gsap.from(s.lines, { yPercent: 110, rotate: 0.001, duration: D.h1, ease: E.reveal, delay: 0.15 + i * 0.1 });
         } else fadeUp(target, { noST: true, delay: i * 0.12 });
@@ -448,7 +448,7 @@
           scrollTrigger: { trigger: qq, start: 'top 85%', end: 'top 15%', scrub: 1 }
         });
         if (Split) {
-          var s = new Split(t, { type: 'chars', mask: 'chars' });
+          var s = new Split(t, { type: 'chars', mask: 'chars', charsClass: 'kl-char' });
           gsap.from(s.chars, {
             yPercent: 110, duration: 0.9, ease: E.reveal, stagger: 0.018, delay: i * 0.08,
             scrollTrigger: { trigger: qq, start: 'top 75%', once: true }
@@ -684,7 +684,7 @@
         });
       });
 
-      var cur = 0, busy = false, splits = [];
+      var cur = 0, busy = false, splits = [], SLIDE_OUT = 150;
       function lines(i) {
         if (!Split) return [slides[i]];
         if (!splits[i]) {
@@ -719,9 +719,11 @@
         }
         busy = true;
         gsap.timeline({ onComplete: function () { gsap.set(from, { opacity: 0, pointerEvents: 'none' }); busy = false; } })
-          .to(lines(prev), { yPercent: -110 * dir, duration: 0.4, ease: E.exit, stagger: 0.02 }, 0)
+          // 150%, not 110%: the line masks reach .35em above the line (umlaut headroom),
+          // so a line has to travel further to be fully out of sight above it
+          .to(lines(prev), { yPercent: -SLIDE_OUT * dir, opacity: 0, duration: 0.4, ease: E.exit, stagger: 0.02 }, 0) // fades out as it leaves
           .set(next, { opacity: 1, pointerEvents: 'auto' }, 0.4)
-          .fromTo(lines(to), { yPercent: 110 * dir }, { yPercent: 0, duration: D.text, ease: E.reveal, stagger: STAGGER }, 0.4);
+          .fromTo(lines(to), { yPercent: SLIDE_OUT * dir, opacity: 1 }, { yPercent: 0, opacity: 1, duration: D.text, ease: E.reveal, stagger: STAGGER }, 0.4);
       }
     });
   }
