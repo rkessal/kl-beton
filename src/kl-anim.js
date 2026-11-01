@@ -396,13 +396,15 @@
     rowGroup('.footer-main-right-links-item', { shift: '.text-block', dx: 10 });
 
     /* list rows appear */
-    ['.faq-list-item', '.service-4-article-list-item', '.service-5-item-list-item', '.footer-main-list-item',
+    // (.service-5-item-list-item is not here: it has its own clip-path wipe below, and a second
+    //  tween with overwrite:true used to kill that wipe halfway and leave the borders cut short)
+    ['.faq-list-item', '.service-4-article-list-item', '.footer-main-list-item',
      '.footer-main-right-links-item', '.about-compare-row', '.contact-details-item'].forEach(function (sel) {
       var rows = $(sel); if (!rows.length) return;
       gsap.set(rows, { y: 30, autoAlpha: 0 });
       ST.batch(rows, {
         start: 'top 94%', once: true,
-        onEnter: function (b) { gsap.to(b, { y: 0, autoAlpha: 1, duration: D.row, ease: E.reveal, stagger: STAGGER, overwrite: true }); }
+        onEnter: function (b) { gsap.to(b, { y: 0, autoAlpha: 1, duration: D.row, ease: E.reveal, stagger: STAGGER, overwrite: 'auto' }); }
       });
     });
 
@@ -411,6 +413,7 @@
       var items = q('.service-5-item-list-item', d);
       if (items.length) gsap.from(items, {
         clipPath: 'inset(0 100% 0 0)', duration: D.row, ease: E.reveal, stagger: 0.1,
+        clearProps: 'clipPath', // never leave a partial clip behind
         scrollTrigger: { trigger: d, start: 'top 85%', once: true }
       });
     });
