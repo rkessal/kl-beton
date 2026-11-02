@@ -1,11 +1,11 @@
 {
   "name": "kl-beton",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "private": true,
   "description": "GSAP + Lenis animations for the KL Beton Webflow site",
   "scripts": {
     "build": "terser src/kl-anim.js -c -m -o dist/kl-anim.min.js",
-    "test": "npm run build && python3 test/build.py && node test/run.js && node test/slider.js && python3 test/site.py && node test/barba.js && node test/clip.js && node test/faq.js && node test/umlaut.js && node test/dev.js",
+    "test": "npm run build && python3 test/build.py && node test/run.js && node test/slider.js && python3 test/site.py && node test/barba.js && node test/clip.js && node test/faq.js && node test/form.js && node test/umlaut.js && node test/dev.js",
     "dev": "node scripts/dev.js"
   },
   "devDependencies": {

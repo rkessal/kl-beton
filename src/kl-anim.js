@@ -162,6 +162,13 @@
           },
           afterLeave: function () { killPage(); },
           beforeEnter: function (data) {
+            // Pages with a form (Kontakt) get a real page load, behind the blue screen: Webflow's form
+            // script and its spam protection (Turnstile) only hook up on a fresh load. After a Barba swap
+            // the form would do a plain browser submit: page refresh, nothing sent.
+            if (data.next.container.querySelector('form')) {
+              location.replace(data.next.url.href); // Barba already pushed the URL: replace, don't add
+              return new Promise(function () {});    // hold the transition until the browser navigates
+            }
             // the new page is already in the DOM here: drop the old one in the same frame,
             // so the navbar is never missing and the new page measures and initialises alone
             data.current.container && data.current.container.remove();
