@@ -379,13 +379,13 @@
         r.addEventListener('mouseenter', function () {
           if (fill) gsap.to(fill, { scaleY: 1, duration: D.hover, ease: E.hoverIn, overwrite: true });
           if (shift.length) gsap.to(shift, { x: o.dx || 14, duration: 0.6, ease: E.hoverIn, overwrite: true });
-          if (o.dim) gsap.to(rows.filter(function (x) { return x !== r; }), { opacity: 0.35, duration: 0.4, overwrite: true });
+          if (o.dim) gsap.to(rows.filter(function (x) { return x !== r; }), { autoAlpha: 0.35, duration: 0.4, overwrite: 'auto' });
           if (o.color) r.classList.add('kl-hover');
         });
         r.addEventListener('mouseleave', function () {
           if (fill) gsap.to(fill, { scaleY: 0, duration: D.hover, ease: E.hover, overwrite: true });
           if (shift.length) gsap.to(shift, { x: 0, duration: 0.6, ease: E.hoverIn, overwrite: true });
-          if (o.dim) gsap.to(rows, { opacity: 1, duration: 0.4, overwrite: true });
+          if (o.dim) gsap.to(rows, { autoAlpha: 1, duration: 0.4, overwrite: 'auto' }); // 'auto': only opacity, so a hover during the rows' rise can't freeze them mid-way (overlapping rows)
           if (o.color) r.classList.remove('kl-hover');
         });
       });
