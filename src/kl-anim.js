@@ -36,7 +36,7 @@
   var PAGE = window.KL_PAGE || { color: '#105ba4', blur: 6 };
   var STAGGER = 0.06;
   var FADE = window.KL_FADE || { from: 0.5, start: 'top 85%', end: 'bottom 45%', scrub: 0.6 }; // scroll text fade
-  var STACK = window.KL_STACK || { hold: '50vh', scale: 0.9, rotate: -3 }; // service cards
+  var STACK = window.KL_STACK || { hold: '50vh', scale: 0.9, rotate: -3, tilt: 10, perspective: 1400 }; // service cards (tilt: degrees the outgoing card leans back)
   var MARQUEE = window.KL_MARQUEE || { speed: 50, hoverSpeed: 0.3 }; // logo marquee: px per second, speed factor on hover
   var IMG_ZOOM = 1.1; // images start this much bigger and settle as their mask opens
 
@@ -549,9 +549,10 @@
         if (clear(bg)) bg = '#ffffff';
         list.classList.add('kl-stack');
         cards.forEach(function (card, i) {
-          gsap.set(card, { position: 'relative', zIndex: i + 1, backgroundColor: bg, transformOrigin: '50% 50%' });
-          // hold: each card stays pinned this much longer before the next one starts sliding over it
-          if (i > 0) gsap.set(card, { marginTop: STACK.hold });
+          gsap.set(card, { position: 'relative', zIndex: i + 1, backgroundColor: bg, transformOrigin: '50% 0%', transformPerspective: STACK.perspective });
+          // hold: a card that fills the screen stays pinned this much longer before the next one slides over it.
+          // Cards keep their own height now; a shorter card gets no hold, because the gap would show the dark backdrop.
+          if (i > 0 && cards[i - 1].offsetHeight >= window.innerHeight) gsap.set(card, { marginTop: STACK.hold });
         });
         var last = cards[cards.length - 1];
         cards.forEach(function (card, i) {
@@ -567,8 +568,9 @@
             pin: true,
             pinSpacing: false
           });
+          // outgoing card: shrinks, turns slightly and leans back (3D tilt around its top edge)
           gsap.to(card, {
-            scale: STACK.scale, rotation: STACK.rotate, ease: 'none',
+            scale: STACK.scale, rotation: STACK.rotate, rotationX: STACK.tilt, ease: 'none',
             scrollTrigger: { trigger: next, start: 'top bottom', end: 'top top', scrub: true }
           });
           var shade = card.querySelector(':scope > .kl-stack-shade');

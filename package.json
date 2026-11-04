@@ -1,6 +1,6 @@
 {
   "name": "kl-beton",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "private": true,
   "description": "GSAP + Lenis animations for the KL Beton Webflow site",
   "scripts": {
