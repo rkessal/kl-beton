@@ -1,0 +1,104 @@
+<!-- KL responsive menu (tablet/phone) -->
+<style>
+.kl-menu-btn{display:none}
+@media (max-width:991px){
+  .kl-nav-row{flex-wrap:wrap!important}
+  .kl-nav-item{display:none!important}
+  .kl-menu-btn{display:flex;align-self:stretch;margin-left:-1px;align-items:center;justify-content:center;flex:0 0 auto;min-width:110px;padding:0 20px;background:#fff;border:1px solid #e1e2e0;font-family:'Inter Tight',sans-serif;font-weight:600;font-size:15px;line-height:18px;text-transform:uppercase;color:#1e1e1e;cursor:pointer}
+  /* logo takes the row, Menu button sits on its right at full height */
+  .kl-nav-row>.nav-link:not(.kl-nav-item){flex:1 1 0%!important;width:auto!important;min-width:0}
+  .kl-nav-row>.nav-link:not(.kl-nav-item) .nav-link-dot{display:none}
+  .kl-menu-btn .kl-roll{min-width:3.8em}.kl-menu-btn .kl-roll-a,.kl-menu-btn .kl-roll-b{text-align:center}.kl-menu-btn .kl-roll-b{right:0} /* room for "Close" */
+  .kl-menu-open .kl-nav-item{display:flex!important;flex:0 0 100%!important;width:100%!important;max-width:none!important}
+  .kl-menu-open .kl-nav-row{max-height:calc(100vh - 10px);overflow-y:auto}
+}
+</style>
+<script>
+(function(){
+  function init(){
+    var nav=document.querySelector('.navbar');
+    if(!nav||nav.querySelector('.kl-menu-btn'))return;
+    var links=nav.querySelectorAll('.nav-link');
+    if(links.length<2)return;
+    var logo=links[0];
+    for(var i=1;i<links.length;i++){
+      links[i].classList.add('kl-nav-item');
+      if(links[i].parentElement)links[i].parentElement.classList.add('kl-nav-row');
+    }
+    if(logo.parentElement)logo.parentElement.classList.add('kl-nav-row');
+    var btn=document.createElement('button');
+    btn.type='button';
+    btn.className='kl-menu-btn';
+    btn.setAttribute('aria-expanded','false');
+    btn.textContent='Menu';
+    logo.insertAdjacentElement('afterend',btn);
+    function setOpen(open){
+      nav.classList.toggle('kl-menu-open',open);
+      btn.setAttribute('aria-expanded',open?'true':'false');
+      btn.textContent=open?'Close':'Menu';
+    }
+    btn.addEventListener('click',function(){setOpen(!nav.classList.contains('kl-menu-open'));});
+    for(var j=1;j<links.length;j++){links[j].addEventListener('click',function(){setOpen(false);});}
+    window.addEventListener('resize',function(){if(window.innerWidth>991)setOpen(false);});
+  }
+  window.klMenuInit=init; // re-run after each Barba page transition
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
+<!-- KL animations (site-wide footer). Source: github.com/rkessal/kl-beton -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/CustomEase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.27/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@barba/core@2.10.3/dist/barba.umd.js"></script>
+<!-- KL loader: published build, or your local code via ?kl-dev=<tunnel> (staging only) -->
+<script>
+(function () {
+  // always the newest release (npm run release tags it and purges jsDelivr). The hourly ?h= stops
+  // browsers from holding an old copy for jsDelivr's 7-day cache. To pin one build: use @v1.2.3 instead.
+  var PROD = 'https://cdn.jsdelivr.net/gh/rkessal/kl-beton@latest/dist/kl-anim.min.js?h=' + Math.floor(Date.now() / 36e5);
+  var KEY = 'kl-dev', dev = null;
+  var staging = /\.webflow\.io$/.test(location.hostname) || location.hostname === 'localhost';
+  try {
+    var q = new URLSearchParams(location.search).get(KEY);
+    if (q === 'off') localStorage.removeItem(KEY);
+    else if (q) localStorage.setItem(KEY, q.replace(/\/+$/, ''));
+    dev = localStorage.getItem(KEY);
+  } catch (e) {}
+  // only on staging, and only from a Cloudflare quick tunnel or localhost
+  if (!staging || !dev || !/^(https:\/\/[a-z0-9-]+\.trycloudflare\.com|http:\/\/localhost(:\d+)?)$/.test(dev)) dev = null;
+
+  function load(src, onerror) {
+    var s = document.createElement('script');
+    s.src = src; s.async = false;
+    if (onerror) s.onerror = onerror;
+    document.body.appendChild(s);
+  }
+  if (!dev) return load(PROD);
+
+  load(dev + '/kl-anim.js?t=' + Date.now(), function () {
+    console.warn('[kl-dev] ' + dev + ' unreachable, using the published build');
+    badge('DEV offline', '#b3261e');
+    load(PROD);
+  });
+  badge('DEV ' + dev.replace(/^https?:\/\//, '').split('.')[0], '#105ba4');
+
+  // live reload: poll the dev server's /version
+  var v = null;
+  setInterval(function () {
+    fetch(dev + '/version', { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      if (v === null) v = t; else if (t !== v) location.reload();
+    }).catch(function () {});
+  }, 1000);
+
+  function badge(text, color) {
+    var b = document.getElementById('kl-dev-badge') || document.createElement('a');
+    b.id = 'kl-dev-badge'; b.textContent = text + ' \u00d7'; b.href = '?kl-dev=off'; b.title = 'Back to the published build';
+    b.setAttribute('data-barba-prevent', '');
+    b.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:2147483647;padding:6px 10px;font:600 11px/1 monospace;color:#fff;background:' + color + ';text-decoration:none;border-radius:2px';
+    document.body.appendChild(b);
+  }
+})();
+</script>

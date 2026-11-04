@@ -1,0 +1,54 @@
+<!-- KL animations (site-wide head). Source: github.com/rkessal/kl-beton -->
+<script>document.documentElement.classList.add('kl-anim');setTimeout(function(){if(!window.klAnimReady)document.documentElement.classList.remove('kl-anim')},3000);</script>
+<style>
+html.kl-anim h1,html.kl-anim h2,html.kl-anim .text-block{visibility:hidden}
+html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!important}.lenis.lenis-stopped{overflow:clip}
+.kl-line{padding-bottom:.08em;margin-bottom:-.08em}
+.kl-line-mask,.kl-char-mask{overflow:visible!important;clip-path:inset(-.35em -100vw 0 -100vw)} /* clip the rise only below the line: wide words can overflow sideways, umlauts/accents (Ä Ö Ü É) above the line box stay visible */
+.kl-roll{position:relative;display:inline-block;overflow:hidden;vertical-align:top}
+.kl-roll-a{display:block}.kl-roll-b{position:absolute;left:0;top:100%;white-space:nowrap}
+.kl-roll{margin-top:-.35em}.kl-roll-a,.kl-roll-b{padding-top:.35em} /* headroom for umlauts: the visible copy keeps its dots, the hidden copy's dots stay below the edge */
+.kl-icon{position:relative;display:inline-flex;overflow:hidden;flex:0 0 auto}
+.kl-icon-2{position:absolute!important;left:0;top:0}
+.kl-roll,.kl-icon{pointer-events:none}
+.kl-fill{position:absolute;top:0;bottom:0;left:0;right:0;transform:scaleY(0);transform-origin:50% 100%;z-index:0;pointer-events:none}
+.kl-fill~*{position:relative;z-index:1}
+.kl-fill-brand{background:#105ba4;left:-10px;right:-10px}
+.kl-fill-dark{background:#1e1e1e}
+.kl-hover,.kl-hover *{color:#f2f2f2!important;transition:color .3s}
+.kl-hover .footer-main-list-item-dot{background:#f2f2f2!important}
+.kl-menu-backdrop{position:fixed;inset:0;z-index:98;background:#f2f2f2;visibility:hidden;pointer-events:none}
+@media (min-width:992px){.kl-menu-backdrop{display:none}}
+.nav-link.kl-current{background-color:var(--_colors---f3f3f2,#f3f3f2)!important}
+.nav-link.kl-current .nav-link-dot{background-color:var(--_colors---brand,#105ba4)!important}
+.navbar .nav-link[data-kl-nav-item],.navbar .nav-link[data-kl-nav-item] .nav-link-dot{transition:background-color .6s cubic-bezier(.215,.61,.355,1)}
+.navbar .nav-link.kl-nav-instant,.navbar .nav-link.kl-nav-instant .nav-link-dot{transition:none!important}
+.navbar .nav-link[data-kl-nav]{position:relative;overflow:hidden}
+.kl-nav-a{display:flex;width:100%;justify-content:space-between;align-items:center;gap:inherit}
+.kl-nav-b{position:absolute;left:0;right:0;top:100%;height:100%;display:flex;justify-content:space-between;align-items:center;padding:inherit;box-sizing:border-box;background:var(--_colors---brand,#105ba4)}
+.kl-nav-b,.kl-nav-b *{color:#fff!important}
+.navbar .nav-link .kl-nav-b .nav-link-dot{background-color:#fff!important}
+.kl-nav-b img{filter:brightness(0) invert(1)} /* logo copy turns white on the blue roll */
+.navbar{z-index:2147483001!important} /* navbar stays above the page transition */
+.kl-screen{position:fixed;inset:0;z-index:2147483000;background:transparent;visibility:hidden;opacity:0;pointer-events:none}
+.kl-marquee{display:block!important;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%)}
+.kl-marquee-track{display:flex;flex-wrap:nowrap;width:max-content;will-change:transform}
+.kl-marquee{border-bottom:1px solid rgba(30,30,30,.3)!important}
+.kl-marquee .service-logo-cell{border-right:0!important;border-bottom:0!important;box-sizing:border-box}
+.kl-stack{background:#1e1e1e!important;padding-left:0!important;padding-right:0!important;clip-path:inset(0)} /* tilted cards behind a shorter one never spill past the list */
+.kl-stack .service-item-1{padding-left:20px;padding-right:20px;will-change:transform} /* cards keep their own height */
+@media (max-width:991px){.kl-stack .service-item-1{padding-left:10px;padding-right:10px}}
+/* testimonial arrows: hover / focus / .active = light grey box, blue arrow + blue line */
+.service-5-testimonials-button{transition:background-color .55s cubic-bezier(.215,.61,.355,1)}
+.service-5-testimonials-button .button-icon{transition:border-color .55s cubic-bezier(.215,.61,.355,1)}
+.service-5-testimonials-button .button-icon path{transition:stroke .55s cubic-bezier(.215,.61,.355,1)}
+.service-5-testimonials-button.active,.service-5-testimonials-button:focus-visible{background-color:var(--_colors---ededed,#ededed);outline:0}
+.service-5-testimonials-button.active .button-icon,.service-5-testimonials-button:focus-visible .button-icon{border-color:var(--_colors---brand,#105ba4)}
+.service-5-testimonials-button.active .button-icon path,.service-5-testimonials-button:focus-visible .button-icon path{stroke:var(--_colors---brand,#105ba4)}
+@media (hover:hover){
+.service-5-testimonials-button:hover{background-color:var(--_colors---ededed,#ededed)}
+.service-5-testimonials-button:hover .button-icon{border-color:var(--_colors---brand,#105ba4)}
+.service-5-testimonials-button:hover .button-icon path{stroke:var(--_colors---brand,#105ba4)}
+}
+.kl-stack-shade{position:absolute;inset:0;background:#1e1e1e;opacity:0;pointer-events:none;z-index:5}
+</style>
