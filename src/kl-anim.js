@@ -36,7 +36,7 @@
   var PAGE = window.KL_PAGE || { color: '#105ba4', blur: 6 };
   var STAGGER = 0.06;
   var FADE = window.KL_FADE || { from: 0.5, start: 'top 85%', end: 'bottom 45%', scrub: 0.6 }; // scroll text fade
-  var STACK = window.KL_STACK || { hold: '50vh', scale: 0.9, rotate: -3, tilt: 10, perspective: 1400 }; // service cards (tilt: degrees the outgoing card leans back)
+  var STACK = window.KL_STACK || { scale: 0.9, rotate: -3, tilt: 10, perspective: 1400 }; // service cards (tilt: degrees the outgoing card leans back)
   var MARQUEE = window.KL_MARQUEE || { speed: 50, hoverSpeed: 0.3 }; // logo marquee: px per second, speed factor on hover
   var IMG_ZOOM = 1.1; // images start this much bigger and settle as their mask opens
 
@@ -50,7 +50,8 @@
   function navItems(c) {
     return q('.navbar .nav-link', c || document).filter(function (a, i) {
       if (a.dataset.klNavItem) return true;
-      if (i === 0 || !a.pathname || a.hostname !== location.hostname) return false;
+      // the logo (first link) counts too: it is the Home link, so it gets the active state and the hover roll
+      if (!a.pathname || a.hostname !== location.hostname) return false;
       var bg = getComputedStyle(a).backgroundColor;
       if (/^rgba?\(255,\s*255,\s*255(,\s*1)?\)$/.test(bg) || a.classList.contains('kl-current')) { a.dataset.klNavItem = '1'; return true; }
       return false;
@@ -550,9 +551,8 @@
         list.classList.add('kl-stack');
         cards.forEach(function (card, i) {
           gsap.set(card, { position: 'relative', zIndex: i + 1, backgroundColor: bg, transformOrigin: '50% 0%', transformPerspective: STACK.perspective });
-          // hold: a card that fills the screen stays pinned this much longer before the next one slides over it.
-          // Cards keep their own height now; a shorter card gets no hold, because the gap would show the dark backdrop.
-          if (i > 0 && cards[i - 1].offsetHeight >= window.innerHeight) gsap.set(card, { marginTop: STACK.hold });
+          // no gap between cards (oharchitecture.com.au/process): the next service sits right under the
+          // pinned one and slides over it; a spacing "hold" would show the dark backdrop as a band
         });
         var last = cards[cards.length - 1];
         cards.forEach(function (card, i) {
@@ -568,10 +568,13 @@
             pin: true,
             pinSpacing: false
           });
+          // starts when the next card reaches the pinned card's bottom edge (the screen's bottom for a tall
+          // card), so the shrinking card never pulls away from the one covering it (no dark sliver)
+          var from = function () { return 'top ' + Math.min(card.offsetHeight, window.innerHeight) + 'px'; };
           // outgoing card: shrinks, turns slightly and leans back (3D tilt around its top edge)
           gsap.to(card, {
             scale: STACK.scale, rotation: STACK.rotate, rotationX: STACK.tilt, ease: 'none',
-            scrollTrigger: { trigger: next, start: 'top bottom', end: 'top top', scrub: true }
+            scrollTrigger: { trigger: next, start: from, end: 'top top', scrub: true }
           });
           var shade = card.querySelector(':scope > .kl-stack-shade');
           if (!shade) {
@@ -580,7 +583,7 @@
           }
           gsap.fromTo(shade, { opacity: 0 }, {
             opacity: 0.35, ease: 'none',
-            scrollTrigger: { trigger: next, start: 'top bottom', end: 'top top', scrub: true }
+            scrollTrigger: { trigger: next, start: from, end: 'top top', scrub: true }
           });
         });
         return function () { list.classList.remove('kl-stack'); q('.kl-stack-shade', list).forEach(function (s) { s.remove(); }); };
@@ -598,6 +601,8 @@
       var btn = e.target.closest('.kl-menu-btn');
       if (btn) { e.stopImmediatePropagation(); e.preventDefault(); setMenu(!menu.open); return; }
       if (menu.open && e.target.closest('.kl-nav-item')) setMenu(false);
+      // tap anywhere outside the links (the empty area below them) closes the menu
+      else if (menu.open && e.target.closest('.kl-menu-backdrop')) { e.preventDefault(); setMenu(false); }
     }, true);
     window.addEventListener('resize', function () { if (menu.open && window.innerWidth > 991) closeMenu(true); });
   }
@@ -618,12 +623,14 @@
     gsap.to(q('.kl-roll-a, .kl-roll-b', p.btn), { yPercent: v ? -100 : 0, duration: 0.5, ease: E.hover });
     if (v) {
       p.nav.classList.add('kl-menu-open');
+      gsap.set(backdrop, { pointerEvents: 'auto' }); // catches taps outside the links
       lenis && lenis.stop();
       gsap.timeline({ onComplete: function () { menu.busy = false; } })
         .fromTo(backdrop, { clipPath: 'inset(0 0 100% 0)', autoAlpha: 1 }, { clipPath: 'inset(0 0 0% 0)', duration: 0.8, ease: E.menu }, 0)
         .fromTo(p.items, { yPercent: 60, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.7, ease: E.reveal, stagger: 0.06 }, 0.35);
     } else {
       gsap.timeline({ onComplete: function () { p.nav.classList.remove('kl-menu-open'); gsap.set(p.items, { clearProps: 'all' }); lenis && lenis.start(); menu.busy = false; } })
+        .set(backdrop, { pointerEvents: 'none' }, 0)
         .to(p.items, { yPercent: -40, autoAlpha: 0, duration: 0.4, ease: E.exit, stagger: 0.04 }, 0)
         .to(backdrop, { clipPath: 'inset(0 0 100% 0)', duration: 0.7, ease: E.menu }, 0.15);
     }
@@ -635,7 +642,7 @@
     if (instant) {
       p.nav && p.nav.classList.remove('kl-menu-open');
       gsap.set(p.items, { clearProps: 'all' });
-      gsap.set(backdrop, { autoAlpha: 0, clipPath: 'inset(0 0 100% 0)' });
+      gsap.set(backdrop, { autoAlpha: 0, clipPath: 'inset(0 0 100% 0)', pointerEvents: 'none' });
       p.btn && gsap.set(q('.kl-roll-a, .kl-roll-b', p.btn), { yPercent: 0 });
       lenis && lenis.start();
     } else setMenu(false);

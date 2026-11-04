@@ -28,13 +28,14 @@ html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!
 .kl-nav-b{position:absolute;left:0;right:0;top:100%;height:100%;display:flex;justify-content:space-between;align-items:center;padding:inherit;box-sizing:border-box;background:var(--_colors---brand,#105ba4)}
 .kl-nav-b,.kl-nav-b *{color:#fff!important}
 .navbar .nav-link .kl-nav-b .nav-link-dot{background-color:#fff!important}
+.kl-nav-b img{filter:brightness(0) invert(1)} /* logo copy turns white on the blue roll */
 .navbar{z-index:2147483001!important} /* navbar stays above the page transition */
 .kl-screen{position:fixed;inset:0;z-index:2147483000;background:transparent;visibility:hidden;opacity:0;pointer-events:none}
 .kl-marquee{display:block!important;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 8%,#000 92%,transparent 100%)}
 .kl-marquee-track{display:flex;flex-wrap:nowrap;width:max-content;will-change:transform}
 .kl-marquee{border-bottom:1px solid rgba(30,30,30,.3)!important}
 .kl-marquee .service-logo-cell{border-right:0!important;border-bottom:0!important;box-sizing:border-box}
-.kl-stack{background:#1e1e1e!important;padding-left:0!important;padding-right:0!important}
+.kl-stack{background:#1e1e1e!important;padding-left:0!important;padding-right:0!important;clip-path:inset(0)} /* tilted cards behind a shorter one never spill past the list */
 .kl-stack .service-item-1{padding-left:20px;padding-right:20px;will-change:transform} /* cards keep their own height */
 @media (max-width:991px){.kl-stack .service-item-1{padding-left:10px;padding-right:10px}}
 /* testimonial arrows: hover / focus / .active = light grey box, blue arrow + blue line */

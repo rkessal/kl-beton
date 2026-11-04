@@ -99,9 +99,13 @@ When you're happy with it, release it as described in the next section.
 
 ```bash
 npm install
-# edit src/kl-anim.js
-npm test                    # builds dist/ and runs all mock checks
-git commit -am "..." && git tag v1.1.1 && git push --follow-tags
+# edit src/kl-anim.js (try it live first with npm run dev)
+npm run release             # build, bump version, commit, tag vX.Y.Z, push, purge jsDelivr
+npm run release -- --test   # same, but runs the test suite first (needs playwright)
+npm run release -- minor    # 1.1.x -> 1.2.0
 ```
 
-Then in Webflow, open **Site settings → Custom code → Footer**, change `PROD = '...@v1.1.0/...'` in the KL loader to the new tag (`@v1.1.1`) and publish.
+Nothing to change in Webflow: the loader in the site footer loads `@latest`, i.e. the newest tag.
+The release script purges jsDelivr's cache, and the loader adds an hourly `?h=` so visitors' browsers
+don't keep an old copy. To freeze the site on one build (e.g. to roll back), change `@latest` in
+**Site settings → Custom code → Footer** to a tag such as `@v1.1.7` and publish.

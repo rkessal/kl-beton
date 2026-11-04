@@ -56,7 +56,9 @@
 <!-- KL loader: published build, or your local code via ?kl-dev=<tunnel> (staging only) -->
 <script>
 (function () {
-  var PROD = 'https://cdn.jsdelivr.net/gh/rkessal/kl-beton@v1.1.6/dist/kl-anim.min.js';
+  // always the newest release (npm run release tags it and purges jsDelivr). The hourly ?h= stops
+  // browsers from holding an old copy for jsDelivr's 7-day cache. To pin one build: use @v1.2.3 instead.
+  var PROD = 'https://cdn.jsdelivr.net/gh/rkessal/kl-beton@latest/dist/kl-anim.min.js?h=' + Math.floor(Date.now() / 36e5);
   var KEY = 'kl-dev', dev = null;
   var staging = /\.webflow\.io$/.test(location.hostname) || location.hostname === 'localhost';
   try {
